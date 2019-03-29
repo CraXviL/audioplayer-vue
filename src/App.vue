@@ -4,19 +4,20 @@
 		  <b-col md="3" cols="6" 
 		  				class="d-flex justify-content-between align-items-center order-1"
 		  				>
-		  	<img src="/img/back.svg" alt="back.svg" @click="playPrevTrack">
+		  	<img src="./img/back.svg" alt="back.svg" @click="playPrevTrack">
 		  	<img v-if="!isPlaying"
-		  				src="/img/play.svg"
+		  				src="./img/play.svg"
 		  				alt="play.svg"
-		  				@click="changePlayerState">
+		  				@click="onClickPlayStop">
 		  	<img v-else="isPlaying"
-		  				src="/img/pause.svg"
+		  				src="./img/pause.svg"
 		  				alt="pause.svg"
-		  				@click="changePlayerState">
-		  	<img src="/img/next.svg" alt="next.svg" @click="playNextTrack">
+		  				@click="onClickPlayStop">
+		  	<img src="./img/next.svg" alt="next.svg" @click="playNextTrack">
 		  </b-col>
 		  <b-col md="6" cols="12"
-		  				class="d-flex flex-column align-items-center order-md-2 order-3 p-0"
+		  				class="d-flex flex-column align-items-center
+		  								order-md-2 order-3 p-0"
 						  @click="onClickProgress"
 						  >
 				<h6>{{ currentTrackName }} {{ currentProgressInMinutes }}</h6>
@@ -26,24 +27,23 @@
 		  							:max="maxProgress"
 		  							></b-progress>
 		  </b-col>
-		  <b-col md="3" cols="6" 
-		  				class="d-flex align-items-center justify-content-center order-md-3 order-2"
-		  				@click="onClickVolume"
-		  				>
-		  	<img v-if="!isMuted" 
-		  				src="/img/volume.svg"
-		  				alt="volume.svg"
-		  				@click="onClickMute"
-		  				>
-		  	<img v-else="isMuted"
-		  				src="/img/mute.svg"
-		  				alt="mute.svg"
-		  				@click="onClickMute"
-		  				>
-		  	<b-progress id="volume"
-		  							:value="volume"
-		  							:max="100"
-		  							></b-progress>
+		  <b-col class="d-flex align-items-center 
+		  							justify-content-center order-md-3 order-2">
+		  	<b-col class="text-right">
+			  	<img v-if="!isMuted" 
+			  				src="./img/volume.svg"
+			  				alt="volume.svg"
+			  				@click="onClickMute"
+			  				>
+			  	<img v-else="isMuted"
+			  				src="./img/mute.svg"
+			  				alt="mute.svg"
+			  				@click="onClickMute"
+			  				>
+			  </b-col>
+			  <b-col id="volume-wrapper" class="p-0" @click="onClickVolume">
+			  	<b-progress id="volume" :value="volume" :max="100"></b-progress>
+				</b-col>
 		  </b-col>
 		</b-row>
 		<b-row class="my-3">
@@ -53,7 +53,11 @@
 		</b-row>
 		<b-row>
 			<b-col>
-				<b-table hover thead-class="d-none" :items="visibleTracks" :fields="fields" @row-clicked="onClickList"/>
+				<b-table hover thead-class="d-none" 
+								:items="visibleTracks" 
+								:fields="fields" 
+								@row-clicked="onClickList"
+								/>
 			</b-col>
 		</b-row>
 	</b-container>
@@ -64,12 +68,16 @@
 	import {mapGetters, mapMutations, mapActions} from 'vuex';
 
   export default {
-  	computed: mapGetters(['currentTrackId', 'currentProgress', 'currentProgressInPixels', 'currentProgressInMinutes', 'trackDuration', 'maxProgress', 'isPlaying', 'isMuted', 'volume', 'visibleTracks', 'fields', 'currentTrackPath', 'currentTrackName']),
+  	computed: {
+  		...mapGetters(['currentTrackName', 'currentTrackPath', 'currentProgress',
+  									'currentProgressInPixels', 'currentProgressInMinutes',
+  									'trackDuration', 'maxProgress', 'isPlaying', 'isMuted',
+  									'volume', 'visibleTracks', 'fields'])
+  	},
   	methods: {
-  		...mapMutations(['setMute', 'findTrack']),
-  		...mapActions(['playPrevTrack', 'playNextTrack']),
-  		changePlayerState() {
-  			if (this.isPlaying) {
+  		...mapActions(['playPrevTrack', 'playNextTrack', 'findTrack']),
+  		onClickPlayStop(){
+  			if (this.isPlaying){
   				this.audioPlayer.pause();
   				this.$store.commit('changePlayerState', false);
   			} else {
@@ -77,22 +85,20 @@
   				this.$store.commit('changePlayerState', true);
   			}
   		},
-			onClickProgress(e) {
-				if (e.target.className === "progress-bar" || e.target.id === 'progress') {
+			onClickProgress(e){
+				if (e.target.className === "progress-bar" || e.target.id === 'progress'){
 					let pixelsInSeconds = this.maxProgress / this.trackDuration;
 					let progressInSeconds = e.layerX / pixelsInSeconds
 					this.$store.dispatch('calcCurrentProgress', progressInSeconds);
 					this.audioPlayer.currentTime = progressInSeconds;
 				}
 			},
-  		onClickVolume(e) {
-  			if (e.target.className === "progress-bar" || e.target.id === 'volume') {
-	  			this.$store.commit('setVolume', e);
-	  			this.audioPlayer.volume = this.volume/100;
-	  		}
+  		onClickVolume(e){
+  			this.$store.commit('setVolume', e);
+  			this.audioPlayer.volume = this.volume/100;
   		},
-  		onClickMute(e) {
-  			if (this.isMuted) {
+  		onClickMute(e){
+  			if (this.isMuted){
   				this.audioPlayer.muted = false;
   				this.$store.commit('setMute', false);
   			} else {
@@ -100,12 +106,13 @@
   				this.$store.commit('setMute', true);
   			}
   		},
-  		onClickList(e, index, item) {
-  			if (this.visibleTracks[index]._rowVariant === 'active') this.changePlayerState();
-  			else this.$store.commit('setCurrentTrack', index);
+  		onClickList(e, index, item){
+  			this.visibleTracks[index]._rowVariant === 'active' ?
+  				this.onClickPlayStop() :
+  				this.$store.dispatch('setCurrentTrack', index);
   		}
   	},
-  	mounted() {
+  	mounted(){
 			audioPlayerInit: {
 				this.audioPlayer = new Audio();
 			  this.audioPlayer.volume = this.volume/100;
@@ -118,25 +125,25 @@
 				});
 			}
 			addIdsToTrs: {
-				for (var i = 0; i <= this.visibleTracks.length - 1; i++) {
+				for (var i = 0; i <= this.visibleTracks.length - 1; i++){
 					$('tbody tr:nth-child(' + (i+1) + ')').attr('id', 'tr_' + i);
 				}
 			}
   	},
   	watch: {
-  		isPlaying() {
-				if (this.isPlaying) {
+  		isPlaying(){
+				if (this.isPlaying){
 					window.tickId = window.setInterval(() => {
-						if (this.currentProgress === this.trackDuration) {
+						if (this.currentProgress === this.trackDuration){
 							this.$store.dispatch('playNextTrack');
 						}
 						this.$store.dispatch('calcCurrentProgress', this.audioPlayer.currentTime);
-					}, 1000);
+					}, 100);
 				} else {
 					window.clearInterval(window.tickId);
 				}
   		},
-  		currentTrackPath() {
+  		currentTrackPath(){
 				this.audioPlayer.pause();
 				this.audioPlayer.src = this.currentTrackPath;
 				$(this.audioPlayer).one('loadeddata', () => this.audioPlayer.play());
@@ -145,6 +152,9 @@
 					this.$store.commit('setTrackDuration', this.audioPlayer.duration);
 				});
 				this.$store.commit('changePlayerState', true);
+  		},
+  		visibleTracks(){
+  			this.$store.dispatch('updateListState');
   		}
   	}
   };

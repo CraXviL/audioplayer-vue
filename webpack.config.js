@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const isDevelopment = argv.mode === 'development';
 const isProduction = !isDevelopment;
@@ -16,6 +17,7 @@ const config = {
   },
   output: {
     filename: 'bundle.js',
+    publicPath: 'dist/',
     path: distPath
   },
   module: {
@@ -74,6 +76,8 @@ const config = {
       },
     }]
   },
+  mode: isDevelopment ? 'development' : 'production',
+  devtool: isDevelopment ? 'eval-source-map' : 'none',
   plugins: [
     new webpack.ProvidePlugin({
       $: 'jquery',
@@ -87,8 +91,13 @@ const config = {
       chunkFilename: '[id].css'
     }),
     new HtmlWebpackPlugin({
-      template: './index.html'
-    })
+      filename: 'index.html'
+    }),
+    new CopyWebpackPlugin([{
+      from: '/src/img',
+      to: '/dist/img',
+      toType: 'dir'
+    }])
   ],
   optimization: isProduction ? {
     minimizer: [
