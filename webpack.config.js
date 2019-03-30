@@ -17,7 +17,6 @@ const config = {
   },
   output: {
     filename: 'bundle.js',
-    publicPath: 'dist/',
     path: distPath
   },
   module: {
@@ -91,11 +90,11 @@ const config = {
       chunkFilename: '[id].css'
     }),
     new HtmlWebpackPlugin({
-      filename: 'index.html'
+      filename: './index.html'
     }),
     new CopyWebpackPlugin([{
-      from: '/src/img',
-      to: '/dist/img',
+      from: './src/img',
+      to: './dist/img',
       toType: 'dir'
     }])
   ],
